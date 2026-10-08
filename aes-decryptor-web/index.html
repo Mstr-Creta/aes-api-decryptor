@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Browser-based API Response AES Decryptor with Burp Suite import, HMAC verification and AES-CBC decryption.">
+<meta name="theme-color" content="#0f1b33">
+<meta property="og:title" content="API Response AES Decryptor">
+<meta property="og:description" content="Client-side AES-CBC API response decryption and HMAC verification tool.">
+<meta name="robots" content="noindex,nofollow">
+<title>API Response AES Decryptor</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#f2f5fa;--card:#fff;--tx:#172033;--mu:#64708a;--bd:#e0e6f0;--in:#f7f9fc;--pr:#2563eb;--ok:#15803d;--okb:#dcfce7;--er:#b91c1c;--erb:#fee2e2;--w:#b45309;--wb:#fef3c7;--sb:#0f1b33;--nh:#1a2a4a;--na:#1f3a73;color-scheme:light;--c1:#7c3aed;--c2:#1d4ed8;--c3:#15803d;--c4:#b45309}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e0f12;--card:#17191e;--tx:#e8eaef;--mu:#8e95a3;--bd:#272a31;--in:#101216;--pr:#3b7bf5;--ok:#4ade80;--okb:#12291b;--er:#f87171;--erb:#2e1517;--w:#fbbf24;--wb:#2f2610;--sb:#0a0b0d;--nh:#1a1d23;--na:#262b36;--c1:#9cdcfe;--c2:#ce9178;--c3:#b5cea8;--c4:#569cd6;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0e0f12;--card:#17191e;--tx:#e8eaef;--mu:#8e95a3;--bd:#272a31;--in:#101216;--pr:#3b7bf5;--ok:#4ade80;--okb:#12291b;--er:#f87171;--erb:#2e1517;--w:#fbbf24;--wb:#2f2610;--sb:#0a0b0d;--nh:#1a1d23;--na:#262b36;--c1:#9cdcfe;--c2:#ce9178;--c3:#b5cea8;--c4:#569cd6;color-scheme:dark}
+*,*:before,*:after{box-sizing:inherit}html{scroll-padding-top:env(safe-area-inset-top,0px);scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.app{display:flex;min-height:100vh}
+aside{width:228px;background:var(--sb);color:#cbd5e8;padding:18px 12px;display:flex;flex-direction:column;gap:18px;position:sticky;top:0;height:100vh;flex:none}
+.brand{display:flex;gap:10px;align-items:center;padding:0 6px}.brand b{display:block;color:#fff;font-size:16px}.brand small{color:#8fa0c0}
+.logo{width:38px;height:38px;border-radius:10px;background:var(--pr);display:grid;place-items:center;font-size:18px}
+nav{display:flex;flex-direction:column;gap:4px}nav a{color:#cbd5e8;text-decoration:none;padding:10px 12px;border-radius:9px}nav a:hover{background:var(--nh)}nav a.on{background:var(--na);color:#fff}
+.foot{margin-top:auto;font-size:12px;color:#8fa0c0}
+main{flex:1;min-width:0;padding:22px;max-width:1280px}
+header{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+h1{margin:0;font-size:24px}header p{margin:2px 0 0;color:var(--mu)}
+.badges{display:flex;gap:8px;flex-wrap:wrap}.badges span{padding:5px 12px;border-radius:999px;background:var(--card);border:1px solid var(--bd);font-size:12px;font-weight:600;color:var(--c2)}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:16px;margin-bottom:16px}
+.card h2{margin:0 0 2px;font-size:15px}.sub{color:var(--mu);font-size:12px;margin:0 0 10px}
+.g2{display:grid;grid-template-columns:2fr 1fr;gap:16px}.g3{display:grid;grid-template-columns:1fr 1.5fr;gap:16px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.row+.row{margin-top:12px}
+label{color:var(--mu);font-size:13px}
+input[type=text],input[type=password],input[type=number],textarea{background:var(--in);color:var(--tx);border:1px solid var(--bd);border-radius:10px;padding:9px 11px;font:13px ui-monospace,Menlo,Consolas,monospace}
+input:focus,textarea:focus{outline:2px solid var(--pr);outline-offset:-1px}
+textarea{width:100%;resize:vertical;min-height:120px;word-break:break-all}
+.btn{border:1px solid var(--bd);background:var(--in);color:var(--tx);padding:8px 14px;border-radius:10px;font:600 13px inherit;cursor:pointer}.btn:hover{border-color:var(--pr)}
+.btn.p{background:var(--pr);border-color:var(--pr);color:#fff;padding:11px 20px}.btn.p:hover{filter:brightness(1.1)}.seg{display:inline-flex;background:var(--card);border:1px solid var(--bd);border-radius:999px;padding:3px}.seg button{border:0;background:none;color:var(--mu);padding:4px 12px;border-radius:999px;font:600 12px inherit;cursor:pointer}.seg button.on{background:var(--pr);color:#fff}
+.chip{font-size:12px;padding:3px 10px;border-radius:999px;background:var(--in);border:1px solid var(--bd);color:var(--mu)}.chip.ok{color:var(--ok);background:var(--okb);border-color:transparent}.chip.bad{color:var(--er);background:var(--erb);border-color:transparent}
+.pill{font-size:12px;font-weight:600;padding:4px 12px;border-radius:999px;background:var(--in);color:var(--mu)}.pill.ok{background:var(--okb);color:var(--ok)}.pill.bad{background:var(--erb);color:var(--er)}.pill.warn{background:var(--wb);color:var(--w)}
+.sp{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+ol.pipe{display:flex;flex-wrap:wrap;gap:6px;list-style:none;padding:0;margin:0 0 10px}
+.pipe li{padding:3px 10px;border-radius:999px;font-size:12px;background:var(--in);border:1px solid var(--bd);color:var(--mu)}
+.pipe li.ok{background:var(--okb);color:var(--ok);border-color:transparent}.pipe li.ok:before{content:"✓ "}
+.pipe li.bad{background:var(--erb);color:var(--er);border-color:transparent}.pipe li.bad:before{content:"✕ "}
+.pipe li.skip:before{content:"– "}
+pre{margin:0;background:var(--in);border:1px solid var(--bd);border-radius:10px;padding:12px;font:12px/1.6 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-all;max-height:420px;overflow:auto}
+#out{position:relative;background:var(--in);border:1px solid var(--bd);border-radius:10px;font:12px/1.6 ui-monospace,Menlo,Consolas,monospace;max-height:420px;min-height:200px;overflow:auto;padding:8px 0}
+#out div{white-space:pre-wrap;word-break:break-all;padding:0 12px 0 48px;position:relative}#out div.hit{background:var(--wb)}
+#out b{position:absolute;left:0;width:38px;text-align:right;color:var(--mu);font-weight:400}
+#out i{font-style:normal}.k{color:var(--c1)}.s{color:var(--c2)}.n{color:var(--c3)}.b{color:var(--c4)}
+#q{width:150px;padding:7px 10px}
+@media(max-width:900px){.g2,.g3{grid-template-columns:1fr}aside{display:none}main{padding:14px}}
+</style></head><body>
+<div class="app">
+<aside>
+ <div class="brand"><div class="logo">🔒</div><div><b>API Decryptor</b><small>Security Tools</small></div></div>
+ <nav><a class="on" href="#top">🔓 AES Decryptor</a><a href="#burp">📥 Burp Import</a><a href="#diagw">📊 Diagnostics</a><a href="#outw">{ } Output</a></nav>
+ <div class="foot"><p>Runs entirely in your browser (Web Crypto). Keys and data are never sent anywhere.</p></div>
+</aside>
+<main id="top">
+<header><div><h1>API Response AES Decryptor</h1><p>Auto-detects key format, prefix and layout · HMAC-verified AES-CBC</p></div>
+<div class="badges"><span id="b1">AES-256-CBC</span><span>PKCS#7</span><span>HMAC-SHA256</span><div class="seg" id="seg"><button data-t="light">☀ Light</button><button data-t="dark">🌙 Dark</button><button data-t="auto">Auto</button></div></div></header>
+
+<section class="card" id="burp">
+ <div class="sp"><div><h2>Burp Suite import</h2><p class="sub" style="margin:0">Paste a raw HTTP response/request, Burp XML item, JSON or form body — RESPONSE_DATA and RESPONSE_TOKEN are extracted automatically.</p></div>
+ <div class="row"><button class="btn" id="ex">Extract &amp; decrypt</button><button class="btn" id="smp">Load sample</button><button class="btn" id="clr">Clear</button></div></div>
+ <textarea id="bp" style="min-height:90px" placeholder='HTTP/1.1 200 OK&#10;Content-Type: application/json&#10;&#10;{"RESPONSE_DATA":"&lt;prefix&gt;&lt;base64&gt;","RESPONSE_TOKEN":"&lt;hex hmac&gt;"}'></textarea>
+ <div id="bm" class="sub" style="margin:8px 0 0"></div>
+</section>
+
+<section class="card">
+ <div class="sp"><div><h2>Configuration</h2><p class="sub" style="margin:0">Decryption parameters for the API response.</p></div><button class="btn p" id="go">🔓 DECRYPT RESPONSE</button></div>
+ <div class="row"><label for="key">AES / HMAC key</label>
+  <input type="password" id="key" value="" placeholder="Paste AES/HMAC key (UTF-8, hex or Base64)" style="flex:1;min-width:220px" autocomplete="off" spellcheck="false">
+  <button class="btn" id="eye" title="Show/hide">👁</button><span class="chip" id="kc"></span>
+  <label for="pre">Prefix length</label><input type="number" id="pre" value="10" min="0" max="100" style="width:80px"></div>
+ <div class="row"><label>Input normalization</label>
+  <label><input type="checkbox" id="sl" checked> \/ → /</label><label><input type="checkbox" id="qt"> Remove quotes</label>
+  <label><input type="checkbox" id="ws"> Remove whitespace</label><label><input type="checkbox" id="ju"> JSON unescape</label></div>
+ <div class="row"><label><input type="checkbox" id="auto" checked> <b style="color:var(--tx)">Auto-detect</b> key encoding, prefix, normalization &amp; IV layout (HMAC-guided)</label></div>
+</section>
+
+<div class="g2">
+ <section class="card"><h2>Encrypted response</h2><p class="sub">RESPONSE_DATA (Base64, with prefix)</p><textarea id="data" spellcheck="false" placeholder="Paste RESPONSE_DATA…"></textarea></section>
+ <section class="card"><h2>Response token</h2><p class="sub">RESPONSE_TOKEN (HMAC-SHA256, hex)</p><textarea id="tok" spellcheck="false" placeholder="Paste RESPONSE_TOKEN…"></textarea></section>
+</div>
+
+<div class="g3">
+ <section class="card" id="diagw"><div class="sp"><h2>Analysis / Diagnostics</h2><span class="pill" id="pill">Ready</span></div>
+  <ol class="pipe" id="pipe"></ol><pre id="diag"></pre></section>
+ <section class="card" id="outw"><div class="sp"><h2>Decrypted response <span class="chip" id="kind"></span></h2>
+  <div class="row"><input type="text" id="q" placeholder="Search…"><span class="sub" id="cnt" style="margin:0"></span><button class="btn" id="fmt">Format</button><button class="btn" id="cp">Copy</button></div></div>
+  <div id="out"></div></section>
+</div>
+</main></div>
+
+<script>
+const $=s=>document.querySelector(s),E=new TextEncoder,D=new TextDecoder('utf-8',{fatal:true}),D2=new TextDecoder;
+const NM=['Key','Normalize','HMAC','Base64','AES-CBC','Output'];
+const hex=b=>[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');
+const unhex=h=>Uint8Array.from(h.match(/../g),x=>parseInt(x,16));
+const b64e=u=>{let s='';new Uint8Array(u).forEach(c=>s+=String.fromCharCode(c));return btoa(s)};
+const b64=s=>{s=s.replace(/[^A-Za-z0-9+\/_-]/g,'').replace(/-/g,'+').replace(/_/g,'/');s+='='.repeat((4-s.length%4)%4);return Uint8Array.from(atob(s),c=>c.charCodeAt(0))};
+const esc=s=>s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const LAY=[['IV ‖ ciphertext',(r,k)=>[r.slice(0,16),r.slice(16)]],['IV = key[0:16]',(r,k)=>[k.slice(0,16),r]],['Zero IV',(r,k)=>[new Uint8Array(16),r]]];
+
+function keyCands(k){const o=[],t=k.trim(),add=(f,b)=>{if([16,24,32].includes(b.length))o.push({f,b})};
+ add('UTF-8 text',E.encode(t));
+ if(/^([0-9a-f]{2})+$/i.test(t))add('Hex',unhex(t));
+ if(/^[A-Za-z0-9+\/_-]+={0,2}$/.test(t))try{add('Base64',b64(t))}catch{}
+ return o}
+function norm(s,f){
+ if(f.sl)s=s.replace(/\\\//g,'/');
+ if(f.q&&s.length>1&&s[0]=='"'&&s.at(-1)=='"')s=s.slice(1,-1);
+ if(f.ws)s=s.replace(/\s+/g,'');
+ if(f.ju)try{s=JSON.parse('"'+s.replace(/"/g,'\\"')+'"')}catch{}
+ return s}
+const combos=M=>{const o=[M];for(let i=0;i<16;i++)o.push({sl:!!(i&1),q:!!(i&2),ws:!!(i&4),ju:!!(i&8),p:M.p});return o};
+const okText=pt=>{if(pt[0]==0x1f&&pt[1]==0x8b)return true;try{D.decode(pt);return true}catch{return false}};
+
+async function tryDec(kb,body,li){let r;try{r=b64(body)}catch{return}
+ const [iv,ct]=LAY[li][1](r,kb);if(ct.length<16||ct.length%16)return;
+ try{const k=await crypto.subtle.importKey('raw',kb,'AES-CBC',false,['decrypt']);
+  return{pt:new Uint8Array(await crypto.subtle.decrypt({name:'AES-CBC',iv},k,ct)),iv,ct:ct.length,li}}catch{}}
+
+async function search(raw,tok,kc,M,A){
+ const F=A?combos(M):[M],P=A?[M.p,...Array.from({length:41},(_,i)=>i)]:[M.p];
+ for(const k of kc){
+  const hk=tok?await crypto.subtle.importKey('raw',k.b,{name:'HMAC',hash:'SHA-256'},false,['sign']):0,seen=new Set;
+  for(const f of F)for(const p of P){
+   if(p>=raw.length)continue;
+   const body=norm(raw.slice(p),f);if(seen.has(body))continue;seen.add(body);
+   if(tok){const g=await crypto.subtle.sign('HMAC',hk,E.encode(body));
+    if(hex(g)==tok.toLowerCase()||b64e(g)==tok)return{k,f,p,body,hm:1}}
+   else for(const li of A?[0,1,2]:[0]){const r=await tryDec(k.b,body,li);if(r&&okText(r.pt))return{k,f,p,body,r}}
+  }}
+ return null}
+
+function kind(t){t=t.trim();try{JSON.parse(t);return'JSON'}catch{}
+ if(/^<!doctype html|^<html/i.test(t))return'HTML';if(/^<\?xml|^<[a-z]/i.test(t))return'XML';
+ if(/^eyJ[\w-]+\.[\w-]+\.[\w-]*$/.test(t))return'JWT';
+ if(t.length>=16&&t.length%4==0&&/^[A-Za-z0-9+\/]+={0,2}$/.test(t))return'Base64';return'Text'}
+function shape(t){const n=[];
+ for(let i=0;i<3;i++){const k=kind(t);
+  if(k=='Base64'){try{const u=D.decode(b64(t.trim()));if(!/[\x00-\x08\x0e-\x1f]/.test(u)){t=u;n.push('nested Base64 decoded');continue}}catch{}}
+  if(k=='JSON'){const v=JSON.parse(t);if(typeof v=='string'&&kind(v)=='JSON'){t=v;n.push('double-encoded JSON unwrapped');continue}}
+  return{t,k,n}}
+ return{t,k:kind(t),n}}
+function pretty(t,min){const tk=t.match(/"(?:\\.|[^"\\])*"|[{}\[\],:]|[^\s{}\[\],:"]+/g)||[];if(min)return tk.join('');
+ let o='',d=0;const ind=()=>'\n'+'  '.repeat(d);
+ for(let i=0;i<tk.length;i++){const x=tk[i];
+  if(x=='{'||x=='['){const nx=tk[i+1];if(nx=='}'||nx==']'){o+=x+nx;i++}else{d++;o+=x+ind()}}
+  else if(x=='}'||x==']'){d--;o+=ind()+x}else if(x==',')o+=x+ind();else if(x==':')o+=': ';else o+=x}
+ return o}
+const hl=s=>esc(s).replace(/("(?:\\.|[^"\\])*")(\s*:)?|\b(true|false|null)\b|-?\d+\.?\d*(?:[eE][+-]?\d+)?/g,(m,s1,c,b)=>s1?(c?`<i class="k">${s1}</i>${c}`:`<i class="s">${s1}</i>`):b?`<i class="b">${m}</i>`:`<i class="n">${m}</i>`);
+
+let OUT={t:'',k:'',min:0};
+function show(){const j=OUT.k=='JSON',t=j?pretty(OUT.t,OUT.min):OUT.t;OUT.shown=t;
+ $('#out').innerHTML=t.split('\n').map((l,i)=>`<div><b>${i+1}</b>${j?hl(l):esc(l)}</div>`).join('');$('#kind').textContent=OUT.k;srch()}
+function srch(){const q=$('#q').value.toLowerCase();let n=0,f;
+ document.querySelectorAll('#out div').forEach(d=>{const h=q&&d.textContent.toLowerCase().includes(q);d.classList.toggle('hit',!!h);if(h){n++;f=f||d}});
+ $('#cnt').textContent=q?n+' match'+(n==1?'':'es'):'';if(f)$('#out').scrollTop=f.offsetTop-40}
+
+async function run(){
+ const raw=$('#data').value.trim(),tok=$('#tok').value.trim(),A=$('#auto').checked,L=[],S=[0,0,0,0,0,0];
+ const fin=(t,c)=>{$('#pill').textContent=t;$('#pill').className='pill '+c;
+  $('#pipe').innerHTML=NM.map((n,i)=>`<li class="${['','ok','bad','skip'][S[i]]}">${n}</li>`).join('');$('#diag').textContent=L.join('\n')};
+ if(!raw){L.push('Paste RESPONSE_DATA (or a whole Burp response above) to begin.');return fin('Ready','')}
+ const kc=keyCands($('#key').value);
+ if(!kc.length){S[0]=2;L.push('Key must decode to 16, 24 or 32 bytes (UTF-8 text, hex or Base64).');return fin('Key error','bad')}
+ S[0]=1;$('#pill').textContent='Working…';
+ const M={sl:$('#sl').checked,q:$('#qt').checked,ws:$('#ws').checked,ju:$('#ju').checked,p:Math.max(0,parseInt($('#pre').value)||0)};
+ let c=await search(raw,tok,kc,M,A);const unv=!c,ver=!!(c&&c.hm);let res=c&&c.r;
+ if(unv)c={k:kc[0],f:M,p:M.p,body:norm(raw.slice(M.p),M)};
+ const{k,f,p,body}=c,fl=[f.sl&&'\\/→/',f.q&&'quotes',f.ws&&'whitespace',f.ju&&'JSON-unescape'].filter(Boolean).join(', ')||'none';
+ if(!unv){$('#pre').value=p;$('#sl').checked=f.sl;$('#qt').checked=f.q;$('#ws').checked=f.ws;$('#ju').checked=f.ju}
+ $('#b1').textContent='AES-'+k.b.length*8+'-CBC';
+ L.push(`RESPONSE_DATA : ${raw.length} chars`,`Prefix        : ${p}${A&&!unv?'  (auto-detected)':''}`,`Normalization : ${fl}`,`Key           : ${k.f} · ${k.b.length} bytes · AES-${k.b.length*8}`);
+ S[1]=1;
+ if(tok){const hk=await crypto.subtle.importKey('raw',k.b,{name:'HMAC',hash:'SHA-256'},false,['sign']);
+  const g=hex(await crypto.subtle.sign('HMAC',hk,E.encode(body)));
+  L.push('',`HMAC-SHA256   : ${ver?'VERIFIED':'MISMATCH'}`,`  expected    : ${tok}`,`  calculated  : ${g}`);S[2]=ver?1:2}
+ else{S[2]=3;L.push('','HMAC-SHA256   : skipped (no RESPONSE_TOKEN)')}
+ let r64;try{r64=b64(body);S[3]=1;L.push('',`Base64        : ${body.length} chars → ${r64.length} bytes`)}
+ catch{S[3]=2;L.push('','Base64        : invalid');return fin('Failed','bad')}
+ if(!res)for(const li of A?[0,1,2]:[0]){res=await tryDec(k.b,body,li);if(res)break}
+ if(!res){S[4]=2;L.push('AES-CBC       : failed — wrong key, prefix or normalization, or bad PKCS#7 padding.');
+  if(!A)L.push('Tip: enable Auto-detect to search prefix, normalization, key encoding and IV layout.');
+  return fin(tok&&unv?'HMAC failed':'Decrypt failed','bad')}
+ S[4]=1;L.push(`Layout        : ${LAY[res.li][0]}`,`IV            : ${hex(res.iv)}`,`Ciphertext    : ${res.ct} bytes`);
+ let pt=res.pt;const notes=[];
+ if(pt[0]==0x1f&&pt[1]==0x8b)try{pt=new Uint8Array(await new Response(new Blob([pt]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer());notes.push('gzip decompressed')}catch{}
+ let text;try{text=D.decode(pt)}catch{text=D2.decode(pt);notes.push('not valid UTF-8 (lossy)')}
+ const o=shape(text);OUT={t:o.t,k:o.k,min:0};S[5]=1;
+ L.push(`Plaintext     : ${o.k} · ${pt.length} bytes`,...o.n.concat(notes).map(x=>'  note: '+x),'','DECRYPTION SUCCESSFUL');
+ show();
+ if(tok&&unv)fin('Decrypted · HMAC mismatch','warn');else fin(ver?'HMAC verified':'Decrypted · unverified',ver?'ok':'warn')}
+
+/* ---------- Burp / field extraction ---------- */
+const DK=['response[_-]?data','encrypted[_-]?data','encrypted','payload','cipher(?:text)?','data','body','content','enc'],
+ TK=['response[_-]?token','x-response-token','token','hmac','signature','sign','sig','mac','hash','checksum'];
+const pats=k=>[`"${k}"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"`,`(?:^|[&?\\s])${k}=([^&\\s"]+)`,`<${k}>\\s*([^<]+?)\\s*</${k}>`,`^${k}\\s*:\\s*([^\\r\\n]+)`];
+function find1(t,ks){for(const k of ks)for(const p of pats(k)){const m=t.match(new RegExp(p,'im'));if(m&&m[1].trim())return m[1].trim()}}
+function dechunk(b){let o='',i=0;while(i<b.length){const j=b.indexOf('\n',i);if(j<0)break;const n=parseInt(b.slice(i,j).trim(),16);if(!n)break;o+=b.slice(j+1,j+1+n);i=j+1+n;while(b[i]=='\r'||b[i]=='\n')i++}return o||b}
+function extract(){
+ const src=$('#bp').value;let s=src.trim();if(!s)return;
+ const x=s.match(/<response[^>]*>\s*(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?\s*<\/response>/i);
+ if(x){s=x[1].trim();if(/<response[^>]*base64="true"/i.test(src))try{s=D2.decode(Uint8Array.from(atob(s),c=>c.charCodeAt(0)))}catch{}}
+ const i=s.search(/\r?\n\r?\n/);let head='',body=s;
+ if(/^(HTTP\/|GET |POST |PUT |PATCH )/.test(s)&&i>0){head=s.slice(0,i);body=s.slice(i).trim();if(/chunked/i.test(head))body=dechunk(body)}
+ const all=head+'\n'+body;let d=find1(all,DK),t=find1(all,TK),how='labelled field';
+ if(!d){d=(body.match(/[A-Za-z0-9+\/=_\\^-]{64,}/g)||[]).sort((a,b)=>b.length-a.length)[0];how='longest Base64-like blob'}
+ if(!t){const m=all.match(/\b[a-f0-9]{64}\b/i);t=m&&m[0]}
+ if(d&&/%[0-9a-f]{2}/i.test(d))try{d=decodeURIComponent(d)}catch{}
+ if(!d){$('#bm').textContent='✕ No encrypted payload found — paste RESPONSE_DATA manually below.';return}
+ $('#data').value=d;$('#tok').value=t||'';
+ $('#bm').textContent=`✓ Extracted data (${d.length} chars, via ${how}) and ${t?'token ('+t.length+' chars)':'no token — will probe by decrypting'}.`;run()}
+
+async function sample(){
+ const key=hex(crypto.getRandomValues(new Uint8Array(16))),kb=E.encode(key);$('#key').value=key;kd();
+ const obj={status:'200',errMsg:'',result:{id:1001,name:'Demo User',ref:'REF-0001',active:true,scores:[91.5,88,null]}};
+ const iv=crypto.getRandomValues(new Uint8Array(16)),k=await crypto.subtle.importKey('raw',kb,'AES-CBC',false,['encrypt']);
+ const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-CBC',iv},k,E.encode(JSON.stringify(obj))));
+ const all=new Uint8Array(16+ct.length);all.set(iv);all.set(ct,16);const body=b64e(all);
+ const hk=await crypto.subtle.importKey('raw',kb,{name:'HMAC',hash:'SHA-256'},false,['sign']);
+ const tok=hex(await crypto.subtle.sign('HMAC',hk,E.encode(body)));
+ $('#bp').value='HTTP/1.1 200 OK\nContent-Type: application/json\n\n'+JSON.stringify({RESPONSE_DATA:hex(crypto.getRandomValues(new Uint8Array(5)))+body,RESPONSE_TOKEN:tok}).replace(/\//g,'\\/');
+ extract()}
+
+function kd(){const c=keyCands($('#key').value)[0];const e=$('#kc');if(!$('#key').value.trim()){e.className='chip';e.textContent='Enter a key';return}
+ e.className='chip '+(c?'ok':'bad');e.textContent=c?`${c.f} · ${c.b.length} bytes → AES-${c.b.length*8}`:'Invalid key length'}
+const copy=async(t,b)=>{try{await navigator.clipboard.writeText(t)}catch{const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();document.execCommand('copy');a.remove()}const o=b.textContent;b.textContent='Copied ✓';setTimeout(()=>b.textContent=o,1200)};
+
+$('#go').onclick=run;$('#ex').onclick=extract;$('#smp').onclick=sample;
+$('#clr').onclick=()=>{['#bp','#data','#tok','#q'].forEach(s=>$(s).value='');$('#bm').textContent='';$('#out').innerHTML='';$('#kind').textContent='';OUT={t:'',k:'',min:0};run()};
+$('#eye').onclick=()=>{const k=$('#key');k.type=k.type=='password'?'text':'password'};
+$('#key').oninput=kd;$('#q').oninput=srch;
+$('#fmt').onclick=()=>{if(OUT.k=='JSON'){OUT.min=!OUT.min;show()}};
+$('#cp').onclick=e=>copy(OUT.shown||'',e.target);
+const setT=t=>{const r=document.documentElement;t=='auto'?r.removeAttribute('data-theme'):r.dataset.theme=t;document.querySelectorAll('#seg button').forEach(b=>b.classList.toggle('on',b.dataset.t==t));try{localStorage.setItem('theme',t)}catch{}};
+document.querySelectorAll('#seg button').forEach(b=>b.onclick=()=>setT(b.dataset.t));
+{let t='auto';try{t=localStorage.getItem('theme')||'auto'}catch{}setT(t)}
+$('#bp').addEventListener('paste',()=>setTimeout(extract,50));
+$('#data').addEventListener('paste',()=>setTimeout(()=>{const v=$('#data').value;if(/response[_-]?(data|token)|^HTTP\//i.test(v)){$('#bp').value=v;extract()}},50));
+document.addEventListener('keydown',e=>{if(e.ctrlKey&&e.key=='Enter')run()});
+kd();run();
+</script></body></html>
